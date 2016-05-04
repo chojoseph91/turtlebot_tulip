@@ -31,7 +31,7 @@ if __name__ == '__main__':
 			#tur.Rotate(mapping['X1'])
 			#obstacle_present = False
 			detect_obstacle = obs#.Detect()
-			detect_obstacle.DetectAtCoor(mapping['X1'])
+			detect_obstacle.Detect(mapping['X1'])
 			X1reach = detect_obstacle.obstacle_present
 			print X1reach
 		#Pose1= [5,5,0]

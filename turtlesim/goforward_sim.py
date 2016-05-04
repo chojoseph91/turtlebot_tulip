@@ -24,52 +24,38 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 import rospy
 import math
 from geometry_msgs.msg import Twist
-from nav_msgs.msg import Odometry
-
+from turtlesim.msg import Pose
 global init_pose
 global curr_pose
 #init_pose =[0,0,0]
 global i
 i= 0
-def wrap_angle(angle):
-	if (angle<math.pi):
-		return angle
-	else:
-		return (angle - 2*math.pi)
-
 
 def callback(data):
 	global i
 	global init_pose
 	global curr_pose
-	q0 = data.pose.pose.orientation.x
-	q1 = data.pose.pose.orientation.y
-	q2 = data.pose.pose.orientation.z
-	q3 = data.pose.pose.orientation.w
-	theta = math.atan2(2*(q0*q1+q2*q3),1-2*(q1*q1+q2*q2))
-
 	if i == 0:
-	    init_pose = [data.pose.pose.position.x,data.pose.pose.position.y,theta]
-	    curr_pose = [data.pose.pose.position.x,data.pose.pose.position.y,theta]
+	    init_pose = [data.x,data.y,data.theta]
+	    curr_pose = [data.x,data.y,data.theta]
 	else:
-	    curr_pose = [data.pose.pose.position.x,data.pose.pose.position.y,theta]
+	    curr_pose = [data.x,data.y,data.theta]
 	#print("i is "+str(i))
 	#print("current pose is " + str(curr_pose))
 	i = i+1
 class GoForward():
     def __init__(self, goal_pose=[7,6,0]):
-	
 	global init_pose
 	global curr_pose
         # initiliaze
-	print "Going Forward"
-	self.pose=rospy.Subscriber('odom',Odometry, callback)
+	#print "Going Forward"
+	self.pose=rospy.Subscriber("turtle1/pose", Pose, callback)
         rospy.on_shutdown(self.shutdown)
         
-        self.cmd_vel = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size=10)
+        self.cmd_vel = rospy.Publisher('/turtle1/cmd_vel', Twist, queue_size=10)
 
 	#TurtleBot will stop if we don't keep telling it to move.  How often should we tell it to move? 10 HZ
-        r = rospy.Rate(10);
+        r = rospy.Rate(5);
 	print "I stopped?"
         # Twist is a datatype for velocity
         move_cmd = Twist()
@@ -78,7 +64,7 @@ class GoForward():
 	# let's turn at 0 radians/s
 	move_cmd.angular.z = 0
 	print ("goal pose is "+ str(goal_pose))
-	rospy.sleep(1)
+	rospy.sleep(3)
 		
         while not rospy.is_shutdown():
 	    dist_to_go = abs(goal_pose[0]-curr_pose[0]+goal_pose[1]-curr_pose[1])
@@ -101,132 +87,56 @@ class GoForward():
 	# sleep just makes sure TurtleBot receives the stop command prior to shutting down the script
         rospy.sleep(1)
 
-class RotateToward():
+class Rotate():
     def __init__(self, goal_pose=[8,8,0]):
 	global init_pose
 	global curr_pose
         # initiliaze
-	print "Turning"
+	#print "Turning"
 	#rospy.loginfo("current pose is " + str(curr_pose))
         #rospy.init_node('Rotate', anonymous=False)
 
-	self.truepose=rospy.Subscriber('odom',Odometry, callback)
+	self.truepose=rospy.Subscriber("turtle1/pose", Pose, callback)
         rospy.on_shutdown(self.shutdown)
         
-        self.cmd_vel = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size=10)
+        self.cmd_vel = rospy.Publisher('/turtle1/cmd_vel', Twist, queue_size=10)
 
 	#TurtleBot will stop if we don't keep telling it to move.  How often should we tell it to move? 10 HZ
-        r = rospy.Rate(10);
+        r = rospy.Rate(5);
 
         # Twist is a datatype for velocity
-	angularspeed = 0.2
         move_cmd = Twist()
-        move_cmd.linear.z = 0
-	move_cmd.angular.z = angularspeed
+        move_cmd.linear.x = 0
+	move_cmd.angular.z = 0.1
 	print ("goal pose is "+ str(goal_pose))
 	#curr_pose = goal_pose
 	#print ("current pose is "+ str(curr_pose))
 	#print str(init_pose)
 	# as long as you haven't ctrl + c keeping doing...
 	#rospy.loginfo(type(curr_pose))
-	#while(type(curr_pose)==None):
-	#print curr_pose
-	rospy.sleep(1)
+	#while(type(curr_pose)==None):	
+	rospy.sleep(5)
 	angle_to_go = (math.atan2(goal_pose[1]-curr_pose[1],goal_pose[0]-curr_pose[0]))-curr_pose[2]
 
 	#rospy.loginfo("angle to go is " + str(angle_to_go))
 	if (angle_to_go<0):
 		#rospy.loginfo("ok going negative")
-		move_cmd.angular.z = -angularspeed
+		move_cmd.angular.z = -0.1
+
+
+
+
         while not rospy.is_shutdown():
 	    angle_to_go = (math.atan2(goal_pose[1]-curr_pose[1],goal_pose[0]-curr_pose[0]))-curr_pose[2]
 	    #rospy.loginfo("angle to go is " + str(angle_to_go))
-	    if (abs(angle_to_go)>0.15):
-        	if (angle_to_go<0):
-			#rospy.loginfo("ok going negative")
-			move_cmd.angular.z = -angularspeed*5
-		else:
-			move_cmd.angular.z = -angularspeed*5
-		self.cmd_vel.publish(move_cmd)
-	    	# wait for 0.1 seconds (10 HZ) and publish again
-            	r.sleep()
-	    
-	    elif (abs(angle_to_go)>0.03):
-		if (angle_to_go<0):
-			#rospy.loginfo("ok going negative")
-			move_cmd.angular.z = -angularspeed
-		else:
-			move_cmd.angular.z = -angularspeed
-		self.cmd_vel.publish(move_cmd)
-	    	# wait for 0.1 seconds (10 HZ) and publish again
-            	r.sleep()
-	    
-	    elif (abs(angle_to_go)<0.03):
-		self.cmd_vel.publish(Twist())
-		#print "done turning"
-		return
-    def shutdown(self):
-        # stop turtlebot
-        rospy.loginfo("Stop TurtleBot")
-	# a default Twist has linear.x of 0 and angular.z of 0.  So it'll stop TurtleBot
-        self.cmd_vel.publish(Twist())
-	# sleep just makes sure TurtleBot receives the stop command prior to shutting down the script
-        rospy.sleep(1)
-
-class RotateToDegree():
-    def __init__(self, goal_angle=0): #in degrees
-	global init_pose
-	global curr_pose
-        # initiliaze
-	print "Turning"
-	#rospy.loginfo("current pose is " + str(curr_pose))
-        #rospy.init_node('Rotate', anonymous=False)
-
-	self.truepose=rospy.Subscriber('odom',Odometry, callback)
-        rospy.on_shutdown(self.shutdown)
-        
-        self.cmd_vel = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size=10)
-
-	#TurtleBot will stop if we don't keep telling it to move.  How often should we tell it to move? 10 HZ
-        r = rospy.Rate(10);
-
-        # Twist is a datatype for velocity
-	angularspeed = 0.15
-        move_cmd = Twist()
-        move_cmd.linear.z = 0
-	move_cmd.angular.z = angularspeed
-
-	rospy.sleep(1)
-	angle_to_go = wrap_angle(math.radians(goal_angle))-curr_pose[2]
-	print "hi"
-	#rospy.loginfo("angle to go is " + str(angle_to_go))
-	if (angle_to_go<0):
+            if (angle_to_go<0):
 		#rospy.loginfo("ok going negative")
-		move_cmd.angular.z = -angularspeed
-        while not rospy.is_shutdown():
-	    angle_to_go = angle_to_go = wrap_angle(math.radians(goal_angle))-curr_pose[2]
-	    #rospy.loginfo("angle to go is " + str(angle_to_go))
-	    if (abs(angle_to_go)>0.15):
-        	if (angle_to_go<0):
-			#rospy.loginfo("ok going negative")
-			move_cmd.angular.z = -angularspeed*5
-		else:
-			move_cmd.angular.z = -angularspeed*5
-		self.cmd_vel.publish(move_cmd)
+		move_cmd.angular.z = -0.1
+	    if (abs(angle_to_go)>0.02):
+        	self.cmd_vel.publish(move_cmd)
 	    	# wait for 0.1 seconds (10 HZ) and publish again
             	r.sleep()
-	    
-	    elif (abs(angle_to_go)>0.03):
-		if (angle_to_go<0):
-			#rospy.loginfo("ok going negative")
-			move_cmd.angular.z = -angularspeed
-		else:
-			move_cmd.angular.z = -angularspeed
-		self.cmd_vel.publish(move_cmd)
-	    	# wait for 0.1 seconds (10 HZ) and publish again
-            	r.sleep()
-	    
-	    elif (abs(angle_to_go)<0.03):
+	    elif (abs(angle_to_go)<0.02):
 		self.cmd_vel.publish(Twist())
 		#print "done turning"
 		return
@@ -237,7 +147,7 @@ class RotateToDegree():
         self.cmd_vel.publish(Twist())
 	# sleep just makes sure TurtleBot receives the stop command prior to shutting down the script
         rospy.sleep(1)
-
+ 
 if __name__ == '__main__':
     try:
 	rospy.init_node('GoForward', anonymous=False)
@@ -255,9 +165,9 @@ if __name__ == '__main__':
 
 	Pose1= [5,5,0]
 	Pose1 = input("input pose: ")
-	RotateToDegree(Pose1)
-	#rospy.sleep(1)
-	#GoForward(Pose1)
+	Rotate(Pose1)
+	rospy.sleep(1)
+	GoForward(Pose1)
 	
 	#Pose2 = [7,10,0]
 	#rospy.sleep(2)

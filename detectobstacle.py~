@@ -23,8 +23,12 @@ count = 0
 #retval = False
 class DetectAtCoor:
 	def __init__(self, coor = dc.mapping['X1']):
+        	global obstacle_present
 		global max_count
 		global count
+		global max_obstacle_distance
+		global obstacle_distance
+		global obstacle_angle
 	    	self.scan = rospy.Subscriber("/scan",LaserScan,self.callback)
 		r = rospy.Rate(10);
 		rospy.on_shutdown(self.shutdown)
@@ -34,7 +38,9 @@ class DetectAtCoor:
 		while not rospy.is_shutdown():
 			if count > max_count:
 				return
+			#rospy.loginfo(count)
 			r.sleep()
+		#return obstacle_present
 	def callback(self, data):
 		global obstacle_present
 		global max_count
@@ -70,9 +76,12 @@ class DetectAtCoor:
 		rospy.sleep(1)
 class DetectAtAngle:
 	def __init__(self, angle = 0):
+        	global obstacle_present
 		global max_count
 		global count
-
+		global max_obstacle_distance
+		global obstacle_distance
+		global obstacle_angle
 	    	self.scan = rospy.Subscriber("/scan",LaserScan,self.callback)
 		r = rospy.Rate(10);
 		rospy.on_shutdown(self.shutdown)
@@ -82,7 +91,9 @@ class DetectAtAngle:
 		while not rospy.is_shutdown():
 			if count > max_count:
 				return
+			#rospy.loginfo(count)
 			r.sleep()
+		#return obstacle_present
 	def callback(self, data):
 		global obstacle_present
 		global max_count

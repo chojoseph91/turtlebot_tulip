@@ -31,6 +31,12 @@ global curr_pose
 #init_pose =[0,0,0]
 global i
 i= 0
+def wrap_angle(angle):
+	if (angle<math.pi):
+		return angle
+	else:
+		return (angle - 2*math.pi)
+
 
 def callback(data):
 	global i
@@ -166,6 +172,7 @@ class RotateToward():
         self.cmd_vel.publish(Twist())
 	# sleep just makes sure TurtleBot receives the stop command prior to shutting down the script
         rospy.sleep(1)
+
 class RotateToDegree():
     def __init__(self, goal_angle=0):
 	global init_pose
@@ -184,27 +191,20 @@ class RotateToDegree():
         r = rospy.Rate(10);
 
         # Twist is a datatype for velocity
-	angularspeed = 0.2
+	angularspeed = 0.15
         move_cmd = Twist()
         move_cmd.linear.z = 0
 	move_cmd.angular.z = angularspeed
-	#print ("goal pose is "+ str(goal_pose))
-	#curr_pose = goal_pose
-	#print ("current pose is "+ str(curr_pose))
-	#print str(init_pose)
-	# as long as you haven't ctrl + c keeping doing...
-	#rospy.loginfo(type(curr_pose))
-	#while(type(curr_pose)==None):
-	#print curr_pose
+
 	rospy.sleep(1)
-	angle_to_go = math.radians(goal_angle)-curr_pose[2]
+	angle_to_go = wrap_angle(math.radians(goal_angle))-curr_pose[2]
 	print "hi"
 	#rospy.loginfo("angle to go is " + str(angle_to_go))
 	if (angle_to_go<0):
 		#rospy.loginfo("ok going negative")
 		move_cmd.angular.z = -angularspeed
         while not rospy.is_shutdown():
-	    angle_to_go = math.radians(goal_angle)-curr_pose[2]
+	    angle_to_go = angle_to_go = wrap_angle(math.radians(goal_angle))-curr_pose[2]
 	    #rospy.loginfo("angle to go is " + str(angle_to_go))
 	    if (abs(angle_to_go)>0.15):
         	if (angle_to_go<0):
@@ -237,6 +237,7 @@ class RotateToDegree():
         self.cmd_vel.publish(Twist())
 	# sleep just makes sure TurtleBot receives the stop command prior to shutting down the script
         rospy.sleep(1)
+
 if __name__ == '__main__':
     try:
 	rospy.init_node('GoForward', anonymous=False)
